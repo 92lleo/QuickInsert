@@ -5,7 +5,7 @@ android {
     buildToolsVersion "23.0.1"
 
     defaultConfig {
-        applicationId "io.kuenzler.android.stringsmash"
+        applicationId "io.kuenzler.android.quickinsert"
         minSdkVersion 19
         targetSdkVersion 23
         versionCode 1

@@ -11,6 +11,7 @@ import android.support.v7.widget.Toolbar;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.Button;
 import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -81,13 +82,20 @@ public class MainActivity extends AppCompatActivity {
     }
 
     public void apply(View view) {
+
         TextView tv = (TextView) findViewById(R.id.t_newText);
-        String input = tv.getText().toString().trim();
-        SharedPreferences pref = getSharedPreferences("user_settings", MODE_WORLD_READABLE);
+        if(tv.hasFocus()){
+            tv.clearFocus();
+            Button b = (Button) findViewById(R.id.b_setText);
+            b.requestFocus();
+        } else {
+            tv.requestFocus();
+        }
+        /*SharedPreferences pref = getSharedPreferences("user_settings", MODE_WORLD_READABLE);
         SharedPreferences.Editor editor = pref.edit();
         editor.putString("text", input);
         editor.commit();
-        toast("Set " + input + " as new text", true);
+        toast("Set " + input + " as new text", true);*/
 
     }
 

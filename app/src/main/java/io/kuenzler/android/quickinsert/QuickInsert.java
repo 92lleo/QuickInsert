@@ -1,9 +1,12 @@
 package io.kuenzler.android.quickinsert;
 
 import android.app.Activity;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
+
+import de.robv.android.xposed.XposedBridge;
 
 /**
  *
@@ -32,6 +35,7 @@ public class QuickInsert extends Activity {
         mEditText.setOnFocusChangeListener(new View.OnFocusChangeListener() {
             @Override
             public void onFocusChange(View v, boolean hasFocus) {
+                Log.i("QuickInsert", "focusChangedAfterInintial");
                 if (!hasFocus) {
                     mEditText.setText("focus gone:(");
                     finish();
@@ -58,6 +62,7 @@ public class QuickInsert extends Activity {
                 index = 0;
             }
             mEditText.setText(temp[index]);
+            XposedBridge.log("keycode down consumed");
 
             return true;
         } else if ((keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
@@ -68,8 +73,10 @@ public class QuickInsert extends Activity {
                 index = 4;
             }
             mEditText.setText(temp[index]);
+            XposedBridge.log("keycode up consumed");
             return true;
         } else {
+            XposedBridge.log("other keycode");
             return super.onKeyDown(keyCode, event);
         }
     }

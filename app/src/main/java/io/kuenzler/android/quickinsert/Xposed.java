@@ -1,6 +1,10 @@
 package io.kuenzler.android.quickinsert;
 
+import android.app.AlertDialog;
+import android.app.AndroidAppHelper;
 import android.graphics.Rect;
+import android.os.Handler;
+import android.os.Looper;
 import android.widget.EditText;
 import android.widget.TextView;
 
@@ -32,7 +36,9 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                     EditText et = (EditText) param.thisObject;
                     if ((boolean) param.args[0]) {
                         et.setText("I have focus!!! (1)"); //to future me: this one works <<
+                        XposedBridge.log("starting quickinsert after focus");
                         QuickInsert qi = new QuickInsert(et);
+                        showDialog();
                     }
                 } else if (param.thisObject instanceof TextView) {
                     //TODO: delete else-if, obsolete
@@ -43,6 +49,20 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                 } else {
                     //nothing to do here
                 }
+            }
+        });
+    }
+
+    private void showDialog() {
+        new Handler(Looper.getMainLooper()).post(new Runnable() {
+            @Override
+            public void run() {
+                //Do ui related stuff in here
+                AlertDialog.Builder builder = new AlertDialog.Builder(AndroidAppHelper.currentApplication());
+                builder.setMessage("Are you sure ?")
+                        .setPositiveButton("Yes", null)
+                        .setNegativeButton("No", null)
+                        .show();
             }
         });
     }
