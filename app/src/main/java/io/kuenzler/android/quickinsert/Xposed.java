@@ -2,6 +2,7 @@ package io.kuenzler.android.quickinsert;
 
 import android.app.AlertDialog;
 import android.app.AndroidAppHelper;
+import android.content.Intent;
 import android.graphics.Rect;
 import android.os.Handler;
 import android.os.Looper;
@@ -37,7 +38,10 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                     if ((boolean) param.args[0]) {
                         et.setText("I have focus!!! (1)"); //to future me: this one works <<
                         XposedBridge.log("starting quickinsert after focus");
-                        QuickInsert qi = new QuickInsert(et);
+                        //TODO: get Application Context, start intent to QuickInsert with EditText as extra
+                        //Intent myIntent = new Intent(CurrentActivity.this, QuickInsert.class);
+                        //myIntent.putExtra("edittext", et);
+                        //CurrentActivity.this.startActivity(myIntent);
                         showDialog();
                     }
                 } else if (param.thisObject instanceof TextView) {

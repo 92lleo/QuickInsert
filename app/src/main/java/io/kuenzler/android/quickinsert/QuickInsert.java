@@ -1,6 +1,8 @@
 package io.kuenzler.android.quickinsert;
 
 import android.app.Activity;
+import android.content.Intent;
+import android.os.Bundle;
 import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
@@ -13,18 +15,21 @@ import de.robv.android.xposed.XposedBridge;
  */
 public class QuickInsert extends Activity {
 
-    final EditText mEditText;
+    EditText mEditText;
     final String[] temp = {"blabla1", "bla2", "thisis3", "viier", "five"}; //testing only
 
     int index;
 
     /**
-     *
-     * @param editText the EditText obj to influence
+     * @param savedInstanceState
      */
-    public QuickInsert(EditText editText) {
-        mEditText = editText;
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+
         index = 0;
+        //TODO: intent is not sent yet..
+        //Intent intent = getIntent();
+        //mEditText = (EditText) intent.getParcelableExtra("edittext");
         init();
     }
 
@@ -43,7 +48,7 @@ public class QuickInsert extends Activity {
                 }
             }
         });
-        mEditText.setText("Listener Set!"); //TODO: delete
+        mEditText.setText("Listener Set!"); //delete when working
     }
 
     /**
