@@ -16,6 +16,9 @@ import android.widget.Switch;
 import android.widget.TextView;
 import android.widget.Toast;
 
+/**
+ * COPIED FROM OTHER PROJECT, NEEDS ADJUSTION!
+ */
 public class MainActivity extends AppCompatActivity {
 
     @Override
