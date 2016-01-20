@@ -1,12 +1,20 @@
 package io.kuenzler.android.quickinsert;
 
+import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Rect;
+import android.os.Environment;
 import android.view.KeyEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.OutputStreamWriter;
 
 import de.robv.android.xposed.IXposedHookLoadPackage;
 import de.robv.android.xposed.IXposedHookZygoteInit;
@@ -23,9 +31,15 @@ import static de.robv.android.xposed.XposedHelpers.findAndHookMethod;
 public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
 
     private static int index, indexMax;
+    private static SelectionDLV selectionDLV;
+    private static Activity currentActivity;
     private static boolean newObject;
     private static boolean first = true;
     private static String[] valuesX = {"", "bla1", "bla2", "bla3", "bla4"};
+    private static String[] values1 = {"", "a@a.de", "bla@a.com", "work@me.com"};
+    private static String[] values2 = {"", "0516165", "+4956315515", "+4930982522", "112"};
+    private static String[] values3 = {"", "Adress1", "adrress work", "myhomeadress"};
+    private static String[][] arrays = {valuesX, values1, values2, values3};
     private static int etHash;
     private Context mCon;
     private EditText mEditText;
@@ -38,6 +52,17 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
      */
     @Override
     public void initZygote(StartupParam startupParam) throws Throwable {
+
+        //get current activity
+        findAndHookMethod(android.app.Instrumentation.class, "newActivity", ClassLoader.class, String.class, Intent.class, new XC_MethodHook() {
+            @Override
+            protected void afterHookedMethod(MethodHookParam param) throws Throwable {
+                currentActivity = (Activity) param.getResult();
+                //mCon = currentActivity.getApplicationContext();
+            }
+        });
+
+        //hook focus changed for textedit hook
         findAndHookMethod(TextView.class, "onFocusChanged", boolean.class, int.class, Rect.class, new XC_MethodHook() {
             @Override
             protected void afterHookedMethod(MethodHookParam param) throws Throwable {
@@ -47,7 +72,7 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                     mCon = mEditText.getContext().getApplicationContext();
                     if ((boolean) param.args[0]) {
                         //has focus on an EditText
-                        mEditText.setText("I have focus!"); //to future me: this one works <<
+                        //mEditText.setText("I have focus!"); //to future me: this one works <<
                         int newHash = mEditText.hashCode();
                         if (!(etHash == newHash)) {
                             //new EditText
@@ -57,7 +82,6 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                         } else {
                             //old EditText, keep text
                         }
-                        Toast.makeText(mCon, "Focus on " + getET().getClass().getName() + ", " + newHash, Toast.LENGTH_SHORT).show();
                         XposedBridge.log("QI - Focus on " + getET().getClass().getName() + ", " + newHash);
                         //TODO: some sort of ui
                         //Intent myIntent = new Intent(CurrentActivity.this, QuickInsert.class);
@@ -77,10 +101,18 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                             }
                         };
                         mEditText.setOnKeyListener(okl);
+                        //TODO: need for debugging //writeTextEdit(getET().getClass().getName() + ", " + newHash + ",\n");
                     }
                 }
             }
         });
+    }
+
+    private SelectionDLV getSelectionDLV() {
+        if (selectionDLV == null) {
+            selectionDLV = new SelectionDLV(this);
+        }
+        return selectionDLV;
     }
 
     private void init() {
@@ -91,33 +123,13 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
     }
 
     /**
-     * Has no more use
-     *
-     * @param et
-     * @param values
-     * @return
-     */
-    private int getCurrentIndex(EditText et, String[] values) {
-        String current = et.getText().toString().trim();
-        if (!current.isEmpty()) {
-            for (int i = 0; i < values.length; i++) {
-                if (current.equals(values[i])) {
-                    return i;
-                }
-            }
-        }
-        Toast.makeText(mCon, "Text: " + current + " did not find text, i=0", Toast.LENGTH_SHORT).show();
-        return 0;
-    }
-
-    /**
      * Reacts on volume up/down press
      *
      * @param keyCode up or down
      */
-    private void keyPressed(int keyCode) {
-        Toast.makeText(mCon, "index is " + index + ", first is " + String.valueOf(first), Toast.LENGTH_SHORT).show();
-        indexMax = valuesX.length - 1;
+    protected void keyPressed(int keyCode) {
+        //indexMax = valuesX.length - 1;
+        indexMax = arrays.length - 1;
         if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN)) {
             if (first) {
                 first = false;
@@ -127,11 +139,9 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                 } else {
                     index = 0;
                 }
-                //no need //prefEdit.putInt("index", index);
             }
-            //SelectionDLV dlv = new SelectionDLV(this, valuesX);
-            //dlv.showdialog(); //TODO: does not work on MM
-            mEditText.setText(valuesX[index]);
+            getSelectionDLV().createDialog(arrays[index]);
+            //mEditText.setText(valuesX[index]);
             XposedBridge.log("keycode down consumed (index " + index + ")");
         } else if ((keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
             if (first) {
@@ -143,10 +153,41 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
                     index = indexMax;
                 }
             }
-            //SelectionDLV dlv = new SelectionDLV(this, valuesX);
-            //dlv.showdialog(); //TODO: does not work on MM
+            getSelectionDLV().createDialog(arrays[index]);
             mEditText.setText(valuesX[index]);
             XposedBridge.log("keycode up consumed (index " + index + ")");
+        }
+    }
+
+    /**
+     * Sets selected text to et, callback from sDLV.
+     *
+     * @param i index of string to set
+     */
+    public void setSeletctedText(int i) {
+        Toast.makeText(mCon, "Setting " + arrays[index][i] + " from array " + index + " at index " + i, Toast.LENGTH_SHORT).show();
+        setText(arrays[index][i]);
+    }
+
+    private void writeTextEdit(String type) {
+        File sdCard = Environment.getExternalStorageDirectory();
+        File dir = new File(sdCard.getAbsolutePath() + "/quickinsert");
+        if (!dir.exists()) {
+            dir.mkdirs();
+        }
+        File file = new File(dir, "EditTexts");
+        try {
+            FileOutputStream fOut = new FileOutputStream(file);
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            OutputStreamWriter myOutWriter = new OutputStreamWriter(fOut);
+            myOutWriter.append(type);
+            myOutWriter.close();
+            fOut.close();
+
+        } catch (IOException e) {
+            Toast.makeText(mCon, "Could not write to file!!!", Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -165,10 +206,10 @@ public class Xposed implements IXposedHookZygoteInit, IXposedHookLoadPackage {
     }
 
     /**
-     * @param i
+     * @return
      */
-    public void setText(int i) {
-        setText(valuesX[i]);
+    public Activity getActivity() {
+        return currentActivity;
     }
 
     /**

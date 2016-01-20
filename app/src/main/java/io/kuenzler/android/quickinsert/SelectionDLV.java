@@ -1,72 +1,68 @@
 package io.kuenzler.android.quickinsert;
 
+import android.app.AlertDialog;
 import android.app.Dialog;
 import android.content.Context;
-import android.view.LayoutInflater;
-import android.view.View;
-import android.view.ViewGroup;
-import android.view.WindowManager;
-import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
+import android.content.DialogInterface;
+import android.view.KeyEvent;
 import android.widget.EditText;
-import android.widget.ListView;
-import android.widget.Toast;
 
 /**
  * @author Leonhard Künzler
  * @version 0.1
- *          Does not work on MM
  */
-public class SelectionDLV implements AdapterView.OnItemClickListener {
+public class SelectionDLV {
 
     Xposed mMain;
     Context mCon;
     Dialog mListDialog;
     String[] mVal;
     EditText mEt;
+    AlertDialog alertDialog;
+    DialogInterface.OnKeyListener mOkl;
 
     /**
      * @param main
-     * @param options
      */
-    public SelectionDLV(Xposed main, String[] options) {
+    public SelectionDLV(Xposed main) {
         mMain = main;
         mCon = main.getContext();
         mEt = main.getET();
-        mVal = options;
+        mOkl = new DialogInterface.OnKeyListener() {
+            @Override
+            public boolean onKey(DialogInterface dialog, int keyCode, KeyEvent event) {
+                if (event.getAction() == KeyEvent.ACTION_DOWN) {
+                    if ((keyCode == KeyEvent.KEYCODE_VOLUME_DOWN || keyCode == KeyEvent.KEYCODE_VOLUME_UP)) {
+                        mMain.keyPressed(keyCode);
+                        return true;
+                    }
+                }
+                return false;
+            }
+        };
     }
 
-    /**
-     *
-     */
-    public void showdialog() {
-        try {
-            mListDialog = new Dialog(mCon);
-            mListDialog.setTitle("Select Text");
-            mListDialog.getWindow().setType(WindowManager.LayoutParams.TYPE_SYSTEM_ALERT);
-            LayoutInflater li = (LayoutInflater) mCon.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            View v = li.inflate(R.layout.list, (ViewGroup) mEt.getParent(), false);
-            mListDialog.setContentView(v);
-            mListDialog.setCancelable(true);
-            ListView list1 = (ListView) mListDialog.findViewById(R.id.listview);
-            list1.setOnItemClickListener(this);
-            list1.setAdapter(new ArrayAdapter<String>(mCon, android.R.layout.simple_list_item_1, mVal));
-            mListDialog.show();
-        } catch (WindowManager.BadTokenException e) {
-            //until android 6, TYPE_SYTEM_ALARM works. After that app needs permission.
-            Toast.makeText(mCon, "Cannot open dialog. Looks like you run marshmallow.", Toast.LENGTH_SHORT).show();
+    public void createDialog(String[] array) {
+        if (alertDialog != null && alertDialog.isShowing()) {
+            alertDialog.cancel();
         }
+        mVal = array;
+        showdialog();
     }
 
-    /**
-     * @param arg0
-     * @param arg1
-     * @param arg2
-     * @param arg3
-     */
-    public void onItemClick(AdapterView<?> arg0, View arg1, int arg2, long arg3) {
-        mListDialog.cancel();
-        mMain.setText(arg2);
+    private void showdialog() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(mMain.getActivity());
+
+        builder.setTitle("Select Text");
+        builder.setItems(mVal, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int item) {
+                alertDialog.cancel();
+                mMain.setSeletctedText(item);
+            }
+        });
+        alertDialog = builder.create();
+        alertDialog.setOnKeyListener(mOkl);
+        alertDialog.show();
     }
 }
 
